@@ -1,0 +1,43 @@
+{
+  "name": "miraat-vscode",
+  "displayName": "Miraat — Arabic / RTL Lint",
+  "description": "Audit your code for Arabic & right-to-left (RTL) correctness — right in the editor. Powered by the Miraat suite.",
+  "version": "0.1.0",
+  "publisher": "ottospace",
+  "engines": { "vscode": "^1.75.0" },
+  "categories": ["Linters"],
+  "keywords": ["arabic", "rtl", "i18n", "bidi", "linter", "dga"],
+  "icon": "icon.png",
+  "activationEvents": ["onStartupFinished"],
+  "main": "./extension.js",
+  "contributes": {
+    "commands": [
+      { "command": "miraat.auditWorkspace", "title": "Miraat: Audit workspace for Arabic/RTL issues" },
+      { "command": "miraat.auditFile", "title": "Miraat: Audit current file" }
+    ],
+    "configuration": {
+      "title": "Miraat",
+      "properties": {
+        "miraat.tools": {
+          "type": "string",
+          "default": "miraat,lahja,daleel",
+          "description": "Comma-separated Miraat tools to run (line-based linters)."
+        },
+        "miraat.auditOnSave": {
+          "type": "boolean",
+          "default": false,
+          "description": "Run Miraat automatically when you save a file."
+        },
+        "miraat.licenseKey": {
+          "type": "string",
+          "default": "",
+          "description": "Miraat Pro license key — unlocks the private DGA compliance rule pack. Get one at https://ottospace.co."
+        }
+      }
+    }
+  },
+  "repository": { "type": "git", "url": "https://github.com/Otto-OttoSpace/miraat-vscode" },
+  "homepage": "https://ottospace.co",
+  "license": "MIT",
+  "funding": "https://polar.sh/otto-space"
+}
