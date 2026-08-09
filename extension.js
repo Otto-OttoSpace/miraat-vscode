@@ -5,8 +5,18 @@
 const vscode = require("vscode");
 const cp = require("child_process");
 const path = require("path");
+const { promisify } = require("util");
+const execFile = promisify(cp.execFile);
 
 let diag, out;
+
+// npx is invoked through cmd.exe on Windows (it resolves to npx.cmd), so a
+// crafted tool id or workspace file name could otherwise inject a command.
+// Tool ids are simple repo slugs; targets are "." or a path relative to the
+// workspace root — neither ever needs shell metacharacters.
+const TOOL_RE = /^[a-z0-9-]+$/;
+const SHELL_UNSAFE = /[<>|&;$`"'(){}\[\]!%^*?\r\n]/;
+function safePath(t) { return typeof t === "string" && t.length > 0 && !SHELL_UNSAFE.test(t); }
 
 function cfg(k, d) { return vscode.workspace.getConfiguration("miraat").get(k, d); }
 function strip(s) {
@@ -18,11 +28,15 @@ function severity(tag) {
   return /^(flag|i18n)$/i.test(tag) ? vscode.DiagnosticSeverity.Information : vscode.DiagnosticSeverity.Warning;
 }
 
-function run(tool, target, cwd, license) {
+// Async so the extension host is never blocked while a linter runs (a scan can
+// take seconds; the old synchronous call froze the whole editor, and on
+// auditOnSave that happened on every save).
+async function run(tool, target, cwd, license) {
   const env = Object.assign({}, process.env, license ? { MIRAAT_LICENSE: license } : {});
   const opts = { cwd, env, encoding: "utf8", timeout: 5 * 60 * 1000, maxBuffer: 20 * 1024 * 1024, shell: process.platform === "win32" };
   try {
-    return strip(cp.execFileSync("npx", ["-y", `github:Otto-OttoSpace/${tool}`, target], opts));
+    const { stdout } = await execFile("npx", ["-y", `github:Otto-OttoSpace/${tool}`, target], opts);
+    return strip(stdout);
   } catch (e) {
     // linters may exit non-zero — their output is still on stdout/stderr
     return strip(((e.stdout || "") + "\n" + (e.stderr || "")).trim() || String(e.message || e));
@@ -71,15 +85,18 @@ async function audit(scope, doc) {
     const d = doc || (vscode.window.activeTextEditor && vscode.window.activeTextEditor.document);
     if (!d || d.uri.scheme !== "file") return;
     target = path.relative(root, d.uri.fsPath) || ".";
+    if (!safePath(target)) { vscode.window.showWarningMessage("Miraat: skipped — this file path contains unsupported characters."); return; }
   }
-  const tools = String(cfg("tools", "miraat,lahja,daleel")).split(",").map(s => s.trim()).filter(Boolean);
+  const tools = String(cfg("tools", "miraat,lahja,daleel")).split(",").map(s => s.trim()).filter(Boolean)
+    .filter(t => { const ok = TOOL_RE.test(t); if (!ok && out) out.appendLine(`Miraat: ignoring invalid tool name "${t}"`); return ok; });
+  if (!tools.length) { vscode.window.showWarningMessage("Miraat: no valid tools configured (miraat.tools)."); return; }
   const license = cfg("licenseKey", "");
   out.clear(); out.show(true);
   out.appendLine(`Miraat — auditing "${target}" with: ${tools.join(", ")}\n`);
   const byFile = new Map();
   await vscode.window.withProgress({ location: vscode.ProgressLocation.Window, title: "Miraat auditing…" }, async () => {
     for (const tool of tools) {
-      const text = run(tool, target, root, license);
+      const text = await run(tool, target, root, license);
       out.appendLine(`### ${tool}\n${text || "(no output)"}\n`);
       parse(text, tool, root, byFile);
     }
