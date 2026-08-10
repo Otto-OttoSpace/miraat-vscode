@@ -10,6 +10,13 @@
   "icon": "icon.png",
   "activationEvents": ["onStartupFinished"],
   "main": "./extension.js",
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": "limited",
+      "description": "Miraat runs external linters via npx and does not execute them in untrusted workspaces. The tool list, license key and audit-on-save cannot be set by a workspace.",
+      "restrictedConfigurations": ["miraat.tools", "miraat.licenseKey", "miraat.auditOnSave"]
+    }
+  },
   "contributes": {
     "commands": [
       { "command": "miraat.auditWorkspace", "title": "Miraat: Audit workspace for Arabic/RTL issues" },
