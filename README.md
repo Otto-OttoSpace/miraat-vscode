@@ -15,10 +15,9 @@ Findings appear in the **Problems** panel and inline. Click the status-bar **�
 |---|---|---|
 | `miraat.tools` | `miraat,lahja,daleel` | Tools to run |
 | `miraat.auditOnSave` | `false` | Audit a file automatically on save |
-| `miraat.licenseKey` | — | **Miraat Pro** key — unlocks the private **DGA** rule pack |
 
-## Miraat Pro
-The extension and the CLIs are free (MIT). **[Miraat Pro](https://polar.sh/otto-space)** adds the private Saudi **DGA compliance** rule pack, priority support, and a commercial license. Set your key in `miraat.licenseKey`.
+The extension and all five CLIs are free and open-source (MIT) — including the
+Saudi **DGA compliance** checks (in `daleel`).
 
 ## Publishing (maintainer note)
 `npm i -g @vscode/vsce` → `vsce login ottospace` → `vsce publish`. Requires the `ottospace` publisher + a marketplace PAT. Also publishable to Open VSX (`ovsx publish`). An `icon.png` (128×128) should be added before publishing.

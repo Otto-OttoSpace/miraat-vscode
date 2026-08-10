@@ -36,9 +36,8 @@ function severity(tag) {
 // Async so the extension host is never blocked while a linter runs (a scan can
 // take seconds; the old synchronous call froze the whole editor, and on
 // auditOnSave that happened on every save).
-async function run(tool, target, cwd, license) {
-  const env = Object.assign({}, process.env, license ? { MIRAAT_LICENSE: license } : {});
-  const opts = { cwd, env, encoding: "utf8", timeout: 5 * 60 * 1000, maxBuffer: 20 * 1024 * 1024, shell: process.platform === "win32" };
+async function run(tool, target, cwd) {
+  const opts = { cwd, encoding: "utf8", timeout: 5 * 60 * 1000, maxBuffer: 20 * 1024 * 1024, shell: process.platform === "win32" };
   try {
     const ref = TOOL_PINS[tool];
     const spec = ref ? `github:Otto-OttoSpace/${tool}#${ref}` : `github:Otto-OttoSpace/${tool}`;
@@ -103,13 +102,12 @@ async function audit(scope, doc) {
   const tools = String(cfg("tools", "miraat,lahja,daleel")).split(",").map(s => s.trim()).filter(Boolean)
     .filter(t => { const ok = TOOL_RE.test(t); if (!ok && out) out.appendLine(`Miraat: ignoring invalid tool name "${t}"`); return ok; });
   if (!tools.length) { vscode.window.showWarningMessage("Miraat: no valid tools configured (miraat.tools)."); return; }
-  const license = cfg("licenseKey", "");
   out.clear(); out.show(true);
   out.appendLine(`Miraat — auditing "${target}" with: ${tools.join(", ")}\n`);
   const byFile = new Map();
   await vscode.window.withProgress({ location: vscode.ProgressLocation.Window, title: "Miraat auditing…" }, async () => {
     for (const tool of tools) {
-      const text = await run(tool, target, root, license);
+      const text = await run(tool, target, root);
       out.appendLine(`### ${tool}\n${text || "(no output)"}\n`);
       parse(text, tool, root, byFile);
     }
