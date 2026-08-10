@@ -13,8 +13,8 @@
   "capabilities": {
     "untrustedWorkspaces": {
       "supported": "limited",
-      "description": "Miraat runs external linters via npx and does not execute them in untrusted workspaces. The tool list, license key and audit-on-save cannot be set by a workspace.",
-      "restrictedConfigurations": ["miraat.tools", "miraat.licenseKey", "miraat.auditOnSave"]
+      "description": "Miraat runs external linters via npx and does not execute them in untrusted workspaces. The tool list and audit-on-save cannot be set by a workspace.",
+      "restrictedConfigurations": ["miraat.tools", "miraat.auditOnSave"]
     }
   },
   "contributes": {
@@ -34,11 +34,6 @@
           "type": "boolean",
           "default": false,
           "description": "Run Miraat automatically when you save a file."
-        },
-        "miraat.licenseKey": {
-          "type": "string",
-          "default": "",
-          "description": "Miraat Pro license key — unlocks the private DGA compliance rule pack. Get one at https://ottospace.co."
         }
       }
     }
