@@ -16,7 +16,12 @@ let diag, out;
 // workspace root — neither ever needs shell metacharacters.
 const TOOL_RE = /^[a-z0-9-]+$/;
 const SHELL_UNSAFE = /[<>|&;$`"'(){}\[\]!%^*?\r\n]/;
-function safePath(t) { return typeof t === "string" && t.length > 0 && !SHELL_UNSAFE.test(t); }
+// Also reject a leading "-" so a crafted filename can't be read as an npx/tool flag.
+function safePath(t) { return typeof t === "string" && t.length > 0 && !t.startsWith("-") && !SHELL_UNSAFE.test(t); }
+
+// Pin each tool to a released tag so a compromised/force-pushed default branch
+// can't ship arbitrary code to extension users through `npx -y github:`.
+const TOOL_PINS = { miraat: "v0.8.0", kashida: "v0.6.1", lahja: "v0.5.1", daleel: "v0.7.0", mizan: "v0.3.1" };
 
 function cfg(k, d) { return vscode.workspace.getConfiguration("miraat").get(k, d); }
 function strip(s) {
@@ -35,7 +40,9 @@ async function run(tool, target, cwd, license) {
   const env = Object.assign({}, process.env, license ? { MIRAAT_LICENSE: license } : {});
   const opts = { cwd, env, encoding: "utf8", timeout: 5 * 60 * 1000, maxBuffer: 20 * 1024 * 1024, shell: process.platform === "win32" };
   try {
-    const { stdout } = await execFile("npx", ["-y", `github:Otto-OttoSpace/${tool}`, target], opts);
+    const ref = TOOL_PINS[tool];
+    const spec = ref ? `github:Otto-OttoSpace/${tool}#${ref}` : `github:Otto-OttoSpace/${tool}`;
+    const { stdout } = await execFile("npx", ["-y", spec, target], opts);
     return strip(stdout);
   } catch (e) {
     // linters may exit non-zero — their output is still on stdout/stderr
@@ -77,6 +84,12 @@ function parse(text, tool, root, byFile) {
 }
 
 async function audit(scope, doc) {
+  // Never spawn a linter (which fetches+runs code via npx) in an untrusted
+  // workspace — a malicious repo could otherwise auto-run it via auditOnSave.
+  if (!vscode.workspace.isTrusted) {
+    vscode.window.showWarningMessage("Miraat: auditing is disabled in an untrusted workspace — trust this folder to run the linters.");
+    return;
+  }
   const folder = vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders[0];
   if (!folder) { vscode.window.showWarningMessage("Miraat: open a folder to audit."); return; }
   const root = folder.uri.fsPath;
