@@ -21,7 +21,7 @@ function safePath(t) { return typeof t === "string" && t.length > 0 && !t.starts
 
 // Pin each tool to a released tag so a compromised/force-pushed default branch
 // can't ship arbitrary code to extension users through `npx -y github:`.
-const TOOL_PINS = { miraat: "v0.8.0", kashida: "v0.6.1", lahja: "v0.5.1", daleel: "v0.7.0", mizan: "v0.3.1" };
+const TOOL_PINS = { miraat: "v0.9.0", kashida: "v0.7.0", lahja: "v0.6.0", daleel: "v0.7.0", mizan: "v0.4.0" };
 
 function cfg(k, d) { return vscode.workspace.getConfiguration("miraat").get(k, d); }
 function strip(s) {
